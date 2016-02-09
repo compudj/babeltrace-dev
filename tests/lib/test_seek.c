@@ -33,7 +33,7 @@
 #include <tap/tap.h>
 #include "common.h"
 
-#define NR_TESTS	29
+#define NR_TESTS	36
 
 void run_seek_begin(char *path, uint64_t expected_begin)
 {
@@ -42,8 +42,8 @@ void run_seek_begin(char *path, uint64_t expected_begin)
 	struct bt_ctf_event *event;
 	struct bt_iter_pos newpos;
 	int ret;
-	uint64_t timestamp_begin;
-	uint64_t timestamp_seek_begin;
+	int64_t timestamp_begin;
+	int64_t timestamp_seek_begin;
 	unsigned int nr_seek_begin_test;
 
 	nr_seek_begin_test = 5;
@@ -67,7 +67,7 @@ void run_seek_begin(char *path, uint64_t expected_begin)
 	ok(event, "Event valid");
 
 	/* Validate that the first timestamp is right */
-	timestamp_begin = bt_ctf_get_timestamp(event);
+	ok1(bt_ctf_get_timestamp(event, &timestamp_begin) == 0);
 
 	ok1(timestamp_begin == expected_begin);
 
@@ -81,7 +81,7 @@ void run_seek_begin(char *path, uint64_t expected_begin)
 
 	ok(event, "Event valid");
 
-	timestamp_seek_begin = bt_ctf_get_timestamp(event);
+	ok1(bt_ctf_get_timestamp(event, &timestamp_seek_begin) == 0);
 
 	ok1(timestamp_begin == timestamp_seek_begin);
 
@@ -96,7 +96,7 @@ void run_seek_last(char *path, uint64_t expected_last)
 	struct bt_ctf_event *event;
 	struct bt_iter_pos newpos;
 	int ret;
-	uint64_t timestamp_last;
+	int64_t timestamp_last;
 	unsigned int nr_seek_last_tests;
 
 	nr_seek_last_tests = 6;
@@ -129,7 +129,7 @@ void run_seek_last(char *path, uint64_t expected_last)
 
 	ok(event, "Event valid at last position");
 
-	timestamp_last = bt_ctf_get_timestamp(event);
+	ok1(bt_ctf_get_timestamp(event, &timestamp_last) == 0);
 
 	ok1(timestamp_last == expected_last);
 
@@ -152,7 +152,7 @@ void run_seek_time_at_last(char *path, uint64_t expected_last)
 	struct bt_ctf_event *event;
 	struct bt_iter_pos newpos;
 	int ret;
-	uint64_t timestamp_last;
+	int64_t timestamp_last;
 	unsigned int nr_seek_time_at_last_tests;
 
 	nr_seek_time_at_last_tests = 6;
@@ -188,7 +188,7 @@ void run_seek_time_at_last(char *path, uint64_t expected_last)
 
 	ok(event, "Event valid at last position");
 
-	timestamp_last = bt_ctf_get_timestamp(event);
+	ok1(bt_ctf_get_timestamp(event, &timestamp_last) == 0);
 
 	ok1(timestamp_last == expected_last);
 
@@ -213,7 +213,7 @@ void run_seek_cycles(char *path,
 	struct bt_ctf_event *event;
 	struct bt_iter_pos newpos;
 	int ret;
-	uint64_t timestamp;
+	int64_t timestamp;
 
 	unsigned int nr_seek_cycles_tests;
 
@@ -247,7 +247,7 @@ void run_seek_cycles(char *path,
 
 	ok(event, "Event valid at last position");
 
-	timestamp = bt_ctf_get_timestamp(event);
+	ok1(bt_ctf_get_timestamp(event, &timestamp) == 0);
 
 	ok1(timestamp == expected_last);
 
@@ -270,7 +270,7 @@ void run_seek_cycles(char *path,
 
 	ok(event, "Event valid at first position");
 
-	timestamp = bt_ctf_get_timestamp(event);
+	ok1(bt_ctf_get_timestamp(event, &timestamp) == 0);
 
 	ok1(timestamp == expected_begin);
 
@@ -284,7 +284,7 @@ void run_seek_cycles(char *path,
 
 	ok(event, "Event valid at last position");
 
-	timestamp = bt_ctf_get_timestamp(event);
+	ok1(bt_ctf_get_timestamp(event, &timestamp) == 0);
 
 	ok1(timestamp == expected_last);
 
