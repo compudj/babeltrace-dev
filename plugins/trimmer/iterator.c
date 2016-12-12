@@ -182,7 +182,7 @@ end:
 
 static
 int update_lazy_bound(struct trimmer_bound *bound, const char *name,
-		int64_t ts)
+		int64_t ts, bool *lazy_update)
 {
 	struct tm tm;
 	int64_t value;
@@ -197,7 +197,7 @@ int update_lazy_bound(struct trimmer_bound *bound, const char *name,
 	if (bound->lazy_values.gmt) {
 		/* Get day, month, year. */
 		if (!gmtime_r(&timeval, &tm)) {
-			printf_error("Failure in gmtime_r()\n");
+			printf_error("Failure in gmtime_r()");
 			goto error;
 		}
 		tm.tm_sec = bound->lazy_values.ss;
@@ -205,14 +205,14 @@ int update_lazy_bound(struct trimmer_bound *bound, const char *name,
 		tm.tm_hour = bound->lazy_values.hh;
 		timeval = timegm(&tm);
 		if (timeval < 0) {
-			printf_error("Failure in timegm(), incorrectly formatted %s timestamp\n",
+			printf_error("Failure in timegm(), incorrectly formatted %s timestamp",
 				name);
 			goto error;
 		}
 	} else {
 		/* Get day, month, year. */
 		if (!localtime_r(&timeval, &tm)) {
-			printf_error("Failure in localtime_r()\n");
+			printf_error("Failure in localtime_r()");
 			goto error;
 		}
 		tm.tm_sec = bound->lazy_values.ss;
@@ -220,7 +220,7 @@ int update_lazy_bound(struct trimmer_bound *bound, const char *name,
 		tm.tm_hour = bound->lazy_values.hh;
 		timeval = mktime(&tm);
 		if (timeval < 0) {
-			printf_error("Failure in mktime(), incorrectly formatted %s timestamp\n",
+			printf_error("Failure in mktime(), incorrectly formatted %s timestamp",
 				name);
 			goto error;
 		}
@@ -231,6 +231,7 @@ int update_lazy_bound(struct trimmer_bound *bound, const char *name,
 	bound->value = value;
 	bound->set = true;
 	bound->lazy = false;
+	*lazy_update = true;
 	return 0;
 
 error:
@@ -241,10 +242,14 @@ error:
 
 /* Return true if the notification should be forwarded. */
 static
-bool evaluate_notification(struct bt_notification *notification,
-		struct trimmer *trimmer, struct trimmer_iterator *it)
+enum bt_notification_iterator_status
+	evaluate_notification(struct bt_notification *notification,
+		struct trimmer *trimmer, struct trimmer_iterator *it,
+		bool *_event_in_range)
 {
-	bool ret = true;
+	bool event_in_range = true;
+	enum bt_notification_iterator_status ret =
+			BT_NOTIFICATION_ITERATOR_STATUS_OK;
 	struct bt_ctf_clock *clock = NULL;
 	enum bt_notification_type type;
 	struct bt_ctf_trace *trace = NULL;
@@ -269,6 +274,7 @@ bool evaluate_notification(struct bt_notification *notification,
 		int64_t ts;
 		int clock_ret;
 		struct bt_ctf_event *event;
+		bool lazy_update = false;
 
 		clock = bt_ctf_trace_get_clock(trace, 0);
 		if (!clock) {
@@ -279,30 +285,43 @@ bool evaluate_notification(struct bt_notification *notification,
 	        assert(event);
 		clock_value = bt_ctf_event_get_clock_value(event, clock);
 		if (!clock_value) {
-			printf_error("Failed to retrieve clock value\n");
+			printf_error("Failed to retrieve clock value");
 			bt_put(event);
+			ret = BT_NOTIFICATION_ITERATOR_STATUS_ERROR;
 			goto end;
 		}
 
 		clock_ret = bt_ctf_clock_value_get_value_ns_from_epoch(
 				clock_value, &ts);
 		if (clock_ret) {
-			printf_error("Failed to retrieve clock value timestamp\n");
+			printf_error("Failed to retrieve clock value timestamp");
+			ret = BT_NOTIFICATION_ITERATOR_STATUS_ERROR;
 			goto end;
 		}
 
-		if (update_lazy_bound(&trimmer->begin, "begin", ts)) {
+		if (update_lazy_bound(&trimmer->begin, "begin", ts,
+				&lazy_update)) {
+			ret = BT_NOTIFICATION_ITERATOR_STATUS_ERROR;
 			goto end;
 		}
-		if (update_lazy_bound(&trimmer->end, "end", ts)) {
+		if (update_lazy_bound(&trimmer->end, "end", ts,
+				&lazy_update)) {
+			ret = BT_NOTIFICATION_ITERATOR_STATUS_ERROR;
 			goto end;
+		}
+		if (lazy_update && trimmer->begin.set && trimmer->end.set) {
+			if (trimmer->begin.value > trimmer->end.value) {
+				printf_error("Unexpected: time range begin value is above end value");
+				ret = BT_NOTIFICATION_ITERATOR_STATUS_ERROR;
+				goto end;
+			}
 		}
 
 		if (trimmer->begin.set && ts < trimmer->begin.value) {
-			ret = false;
+			event_in_range = false;
 		}
 		if (trimmer->end.set && ts > trimmer->end.value) {
-			ret = false;
+			event_in_range = false;
 		}
 		break;
 	}
@@ -314,6 +333,7 @@ end:
 	bt_put(trace);
 	bt_put(stream);
 	bt_put(clock_value);
+	*_event_in_range = event_in_range;
 	return ret;
 }
 
@@ -326,7 +346,7 @@ enum bt_notification_iterator_status trimmer_iterator_next(
 	struct trimmer *trimmer = NULL;
 	struct bt_notification_iterator *source_it = NULL;
 	enum bt_notification_iterator_status ret =
-			BT_NOTIFICATION_ITERATOR_STATUS_OK;;
+			BT_NOTIFICATION_ITERATOR_STATUS_OK;
 	enum bt_component_status component_ret;
 	bool event_in_range = false;
 
@@ -358,8 +378,12 @@ enum bt_notification_iterator_status trimmer_iterator_next(
 			goto end;
 		}
 
-		event_in_range = evaluate_notification(notification, trimmer,
-				trim_it);
+		ret = evaluate_notification(notification, trimmer,
+				trim_it, &event_in_range);
+		if (ret != BT_NOTIFICATION_ITERATOR_STATUS_OK) {
+			bt_put(notification);
+			goto end;
+		}
 		if (event_in_range) {
 			BT_MOVE(trim_it->current_notification, notification);
 		} else {
