@@ -87,11 +87,17 @@ struct enumeration_mapping {
 	GQuark string;
 };
 
+struct bt_ctf_field_type_enum_iter {
+	struct bt_object base;
+	int index;
+};
+
 struct bt_ctf_field_type_enumeration {
 	struct bt_ctf_field_type parent;
 	struct bt_ctf_field_type *container;
 	GPtrArray *entries; /* Array of ptrs to struct enumeration_mapping */
 	struct declaration_enum declaration;
+	bool has_overlapping_ranges;
 };
 
 struct bt_ctf_field_type_floating_point {
@@ -177,13 +183,15 @@ BT_HIDDEN
 int bt_ctf_field_type_validate(struct bt_ctf_field_type *type);
 
 BT_HIDDEN
-const char *bt_ctf_field_type_enumeration_get_mapping_name_unsigned(
+const char *bt_ctf_field_type_enumeration_iter_mapping_name_unsigned(
 		struct bt_ctf_field_type_enumeration *enumeration_type,
+		struct bt_ctf_field_type_enum_iter *iter,
 		uint64_t value);
 
 BT_HIDDEN
-const char *bt_ctf_field_type_enumeration_get_mapping_name_signed(
+const char *bt_ctf_field_type_enumeration_iter_mapping_name_signed(
 		struct bt_ctf_field_type_enumeration *enumeration_type,
+		struct bt_ctf_field_type_enum_iter *iter,
 		int64_t value);
 
 /* Override field type's byte order only if it is set to "native" */

@@ -41,6 +41,7 @@ struct bt_ctf_event_class;
 struct bt_ctf_event;
 struct bt_ctf_field;
 struct bt_ctf_field_type;
+struct bt_ctf_field_type_enum_iter;
 
 /*
  * bt_ctf_field_create: create an instance of a field.
@@ -204,14 +205,14 @@ extern struct bt_ctf_field *bt_ctf_field_enumeration_get_container(
  *	name.
  *
  * Return the enumeration's underlying container field (an integer).
- * bt_put() must be called on the returned value.
  *
  * @param enumeration Enumeration field instance.
  *
  * Returns a field instance on success, NULL on error.
  */
-extern const char *bt_ctf_field_enumeration_get_mapping_name(
-		struct bt_ctf_field *enumeration);
+extern const char *bt_ctf_field_enumeration_iter_mapping_name(
+		struct bt_ctf_field *enumeration,
+		struct bt_ctf_field_type_enum_iter *iter);
 
 /*
  * bt_ctf_field_signed_integer_get_value: get a signed integer field's value

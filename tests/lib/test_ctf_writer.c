@@ -329,6 +329,7 @@ void append_simple_event(struct bt_ctf_stream_class *stream_class,
 	struct bt_ctf_field_type *ep_integer_field_type = NULL;
 	struct bt_ctf_field_type *ep_enum_field_type = NULL;
 	struct bt_ctf_field_type *ep_enum_field_unsigned_type = NULL;
+	struct bt_ctf_field_type_enum_iter *iter = NULL;
 	int ret;
 
 	ok(uint_12_type, "Create an unsigned integer type");
@@ -365,6 +366,9 @@ void append_simple_event(struct bt_ctf_stream_class *stream_class,
 	ok(bt_ctf_field_type_floating_point_get_mantissa_digits(float_type) == 53,
 		"bt_ctf_field_type_floating_point_get_mantissa_digits returns the correct value");
 
+	iter = bt_ctf_field_type_enum_iter_create();
+	ok(iter != NULL, "created enum iterator is not NULL");
+
 	ok(bt_ctf_field_type_enumeration_add_mapping(enum_type,
 		mapping_name_negative_test, -12345, 0) == 0,
 		"bt_ctf_field_type_enumeration_add_mapping accepts negative enumeration mappings");
@@ -387,12 +391,15 @@ void append_simple_event(struct bt_ctf_stream_class *stream_class,
 		-54, -55), "bt_ctf_field_type_enumeration_add_mapping rejects mapping where end < start");
 	bt_ctf_field_type_enumeration_add_mapping(enum_type, "another entry", -42000, -13000);
 
-	ok(bt_ctf_field_type_enumeration_get_mapping_index_by_value(NULL, -42) < 0,
-		"bt_ctf_field_type_enumeration_get_mapping_index_by_value handles a NULL field type correctly");
-	ok(bt_ctf_field_type_enumeration_get_mapping_index_by_value(enum_type, 1000000) < 0,
-		"bt_ctf_field_type_enumeration_get_mapping_index_by_value handles invalid values correctly");
-	ok(bt_ctf_field_type_enumeration_get_mapping_index_by_value(enum_type, -55) == 1,
-		"bt_ctf_field_type_enumeration_get_mapping_index_by_value returns the correct index");
+	bt_ctf_field_type_enum_iter_reset(iter);
+	ok(bt_ctf_field_type_enumeration_iter_mapping_by_value(NULL, iter, -42) < 0,
+		"bt_ctf_field_type_enumeration_iter_mapping_by_value handles a NULL field type correctly");
+	bt_ctf_field_type_enum_iter_reset(iter);
+	ok(bt_ctf_field_type_enumeration_iter_mapping_by_value(enum_type, iter, 1000000) < 0,
+		"bt_ctf_field_type_enumeration_iter_mapping_by_value handles invalid values correctly");
+	bt_ctf_field_type_enum_iter_reset(iter);
+	ok(bt_ctf_field_type_enumeration_iter_mapping_by_value(enum_type, iter, -55) == 1,
+		"bt_ctf_field_type_enumeration_iter_mapping_by_value returns the correct index");
 
 	ok(bt_ctf_event_class_add_field(simple_event_class, enum_type,
 		"enum_field") == 0, "Add signed enumeration field to event");
@@ -579,18 +586,21 @@ void append_simple_event(struct bt_ctf_stream_class *stream_class,
 
 	enum_field = bt_ctf_field_create(ep_enum_field_type);
 	assert(enum_field);
-	ret_char = bt_ctf_field_enumeration_get_mapping_name(NULL);
-	ok(!ret_char, "bt_ctf_field_enumeration_get_mapping_name handles NULL correctly");
-	ret_char = bt_ctf_field_enumeration_get_mapping_name(enum_field);
-	ok(!ret_char, "bt_ctf_field_enumeration_get_mapping_name returns NULL if the enumeration's container field is unset");
+	bt_ctf_field_type_enum_iter_reset(iter);
+	ret_char = bt_ctf_field_enumeration_iter_mapping_name(NULL, iter);
+	ok(!ret_char, "bt_ctf_field_enumeration_iter_mapping_name handles NULL correctly");
+	bt_ctf_field_type_enum_iter_reset(iter);
+	ret_char = bt_ctf_field_enumeration_iter_mapping_name(enum_field, iter);
+	ok(!ret_char, "bt_ctf_field_enumeration_iter_mapping_name returns NULL if the enumeration's container field is unset");
 	enum_container_field = bt_ctf_field_enumeration_get_container(
 		enum_field);
 	ok(bt_ctf_field_signed_integer_set_value(
 		enum_container_field, -42) == 0,
 		"Set signed enumeration container value");
-	ret_char = bt_ctf_field_enumeration_get_mapping_name(enum_field);
+	bt_ctf_field_type_enum_iter_reset(iter);
+	ret_char = bt_ctf_field_enumeration_iter_mapping_name(enum_field, iter);
 	ok(!strcmp(ret_char, mapping_name_negative_test),
-		"bt_ctf_field_enumeration_get_mapping_name returns the correct mapping name with an signed container");
+		"bt_ctf_field_enumeration_iter_mapping_name returns the correct mapping name with an signed container");
 	ret = bt_ctf_event_set_payload(simple_event, "enum_field", enum_field);
 	assert(!ret);
 
@@ -604,7 +614,8 @@ void append_simple_event(struct bt_ctf_stream_class *stream_class,
 	ret = bt_ctf_event_set_payload(simple_event, "enum_field_unsigned",
 		enum_field_unsigned);
 	assert(!ret);
-	ret_char = bt_ctf_field_enumeration_get_mapping_name(enum_field_unsigned);
+	bt_ctf_field_type_enum_iter_reset(iter);
+	ret_char = bt_ctf_field_enumeration_iter_mapping_name(enum_field_unsigned, iter);
 	ok(ret_char && !strcmp(ret_char, mapping_name_test),
 		"bt_ctf_field_enumeration_get_mapping_name returns the correct mapping name with an unsigned container");
 
@@ -669,6 +680,7 @@ void append_simple_event(struct bt_ctf_stream_class *stream_class,
 	ok(bt_ctf_stream_flush(stream) == 0,
 		"Flush trace stream with one event");
 
+	bt_put(iter);
 	bt_put(simple_event_class);
 	bt_put(simple_event);
 	bt_put(uint_12_type);
@@ -751,6 +763,7 @@ void append_complex_event(struct bt_ctf_stream_class *stream_class,
 	struct bt_ctf_stream_class *ret_stream_class;
 	struct bt_ctf_event_class *ret_event_class;
 	struct bt_ctf_field *packet_context, *packet_context_field;
+	struct bt_ctf_field_type_enum_iter *iter = NULL;
 	struct bt_value *obj;
 
 	ok(bt_ctf_field_type_set_alignment(int_16_type, 0),
@@ -795,6 +808,9 @@ void append_complex_event(struct bt_ctf_stream_class *stream_class,
 	ok(!bt_ctf_field_type_structure_add_field(inner_structure_type,
 		array_type, "an_array"), "Add an_array field to inner structure");
 
+	iter = bt_ctf_field_type_enum_iter_create();
+	ok(iter != NULL, "created enum iterator is not NULL");
+
 	bt_ctf_field_type_enumeration_add_mapping(enum_variant_type,
 		"UINT3_TYPE", 0, 0);
 	bt_ctf_field_type_enumeration_add_mapping(enum_variant_type,
@@ -802,22 +818,28 @@ void append_complex_event(struct bt_ctf_stream_class *stream_class,
 	bt_ctf_field_type_enumeration_add_mapping(enum_variant_type,
 		"UINT35_TYPE", 2, 7);
 
-	ok(bt_ctf_field_type_enumeration_get_mapping_index_by_name(NULL,
+	bt_ctf_field_type_enum_iter_reset(iter);
+	ok(bt_ctf_field_type_enumeration_iter_mapping_by_name(NULL, iter,
 		"INT16_TYPE") < 0,
-		"bt_ctf_field_type_enumeration_get_mapping_index_by_name handles a NULL field type correctly");
-	ok(bt_ctf_field_type_enumeration_get_mapping_index_by_name(
-		enum_variant_type, NULL) < 0,
-		"bt_ctf_field_type_enumeration_get_mapping_index_by_name handles a NULL name correctly");
-	ok(bt_ctf_field_type_enumeration_get_mapping_index_by_name(
-		enum_variant_type, "INT16_TYPE") == 1,
-		"bt_ctf_field_type_enumeration_get_mapping_index_by_name returns the correct index");
+		"bt_ctf_field_type_enumeration_iter_mapping_by_name handles a NULL field type correctly");
+	bt_ctf_field_type_enum_iter_reset(iter);
+	ok(bt_ctf_field_type_enumeration_iter_mapping_by_name(
+		enum_variant_type, iter, NULL) < 0,
+		"bt_ctf_field_type_enumeration_iter_mapping_by_name handles a NULL name correctly");
+	bt_ctf_field_type_enum_iter_reset(iter);
+	ok(bt_ctf_field_type_enumeration_iter_mapping_by_name(
+		enum_variant_type, iter, "INT16_TYPE") == 1,
+		"bt_ctf_field_type_enumeration_iter_mapping_by_name returns the correct index");
 
-	ok(bt_ctf_field_type_enumeration_get_mapping_index_by_unsigned_value(NULL, 1) < 0,
-		"bt_ctf_field_type_enumeration_get_mapping_index_by_unsigned_value handles a NULL field type correctly");
-	ok(bt_ctf_field_type_enumeration_get_mapping_index_by_unsigned_value(enum_variant_type, -42) < 0,
-		"bt_ctf_field_type_enumeration_get_mapping_index_by_unsigned_value handles invalid values correctly");
-	ok(bt_ctf_field_type_enumeration_get_mapping_index_by_unsigned_value(enum_variant_type, 5) == 2,
-		"bt_ctf_field_type_enumeration_get_mapping_index_by_unsigned_value returns the correct index");
+	bt_ctf_field_type_enum_iter_reset(iter);
+	ok(bt_ctf_field_type_enumeration_iter_mapping_by_unsigned_value(NULL, iter, 1) < 0,
+		"bt_ctf_field_type_enumeration_iter_mapping_by_unsigned_value handles a NULL field type correctly");
+	bt_ctf_field_type_enum_iter_reset(iter);
+	ok(bt_ctf_field_type_enumeration_iter_mapping_by_unsigned_value(enum_variant_type, iter, -42) < 0,
+		"bt_ctf_field_type_enumeration_iter_mapping_by_unsigned_value handles invalid values correctly");
+	bt_ctf_field_type_enum_iter_reset(iter);
+	ok(bt_ctf_field_type_enumeration_iter_mapping_by_unsigned_value(enum_variant_type, iter, 5) == 2,
+		"bt_ctf_field_type_enumeration_iter_mapping_by_unsigned_value returns the correct index");
 
 	ok(bt_ctf_field_type_variant_add_field(variant_type, uint_3_type,
 		"An unknown entry"), "Reject a variant field based on an unknown tag value");
@@ -1258,6 +1280,7 @@ void append_complex_event(struct bt_ctf_stream_class *stream_class,
 	ok(bt_ctf_stream_flush(stream) == 0,
 		"Flush a stream containing a complex event");
 
+	bt_put(iter);
 	bt_put(uint_35_field);
 	bt_put(a_string_field);
 	bt_put(inner_structure_field);
@@ -1363,10 +1386,14 @@ void field_copy_tests()
 	struct bt_ctf_field *a_3_copy = NULL;
 	struct bt_ctf_field *a_4_copy = NULL;
 	struct bt_ctf_field *strct_copy = NULL;
+	struct bt_ctf_field_type_enum_iter *iter = NULL;
 	uint64_t uint64_t_val;
 	const char *str_val;
 	double double_val;
 	int ret;
+
+	iter = bt_ctf_field_type_enum_iter_create();
+	ok(iter != NULL, "created enum iterator is not NULL");
 
 	/* create len type */
 	len_type = bt_ctf_field_type_integer_create(32);
@@ -1690,7 +1717,8 @@ void field_copy_tests()
 		"bt_ctf_field_copy creates a valid enum's integer field copy");
 
 	/* validate e copy */
-	str_val = bt_ctf_field_enumeration_get_mapping_name(e_copy);
+	bt_ctf_field_type_enum_iter_reset(iter);
+	str_val = bt_ctf_field_enumeration_iter_mapping_name(e_copy, iter);
 	ok(str_val && !strcmp(str_val, "LABEL2"),
 		"bt_ctf_field_copy creates a valid enum field copy");
 
@@ -1813,6 +1841,7 @@ void field_copy_tests()
 	bt_put(a_3_copy);
 	bt_put(a_4_copy);
 	bt_put(strct_copy);
+	bt_put(iter);
 }
 
 static

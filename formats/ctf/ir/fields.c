@@ -866,8 +866,9 @@ end:
 	return container;
 }
 
-const char *bt_ctf_field_enumeration_get_mapping_name(
-	struct bt_ctf_field *field)
+const char *bt_ctf_field_enumeration_iter_mapping_name(
+	struct bt_ctf_field *field,
+	struct bt_ctf_field_type_enum_iter *iter)
 {
 	int ret;
 	const char *name = NULL;
@@ -893,24 +894,26 @@ const char *bt_ctf_field_enumeration_get_mapping_name(
 
 	if (!integer_type->declaration.signedness) {
 		uint64_t value;
+
 		ret = bt_ctf_field_unsigned_integer_get_value(container,
 		      &value);
 		if (ret) {
 			goto error_put_container_type;
 		}
 
-		name = bt_ctf_field_type_enumeration_get_mapping_name_unsigned(
-			enumeration_type, value);
+		name = bt_ctf_field_type_enumeration_iter_mapping_name_unsigned(
+			enumeration_type, iter, value);
 	} else {
 		int64_t value;
+
 		ret = bt_ctf_field_signed_integer_get_value(container,
 		      &value);
 		if (ret) {
 			goto error_put_container_type;
 		}
 
-		name = bt_ctf_field_type_enumeration_get_mapping_name_signed(
-			enumeration_type, value);
+		name = bt_ctf_field_type_enumeration_iter_mapping_name_signed(
+			enumeration_type, iter, value);
 	}
 
 error_put_container_type:

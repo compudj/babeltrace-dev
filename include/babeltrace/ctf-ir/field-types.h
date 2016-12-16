@@ -1169,6 +1169,15 @@ extern int bt_ctf_field_type_floating_point_set_mantissa_digits(
 
 /** @} */
 
+
+struct bt_ctf_field_type_enum_iter;
+
+/* Use bt_put() to free. */
+struct bt_ctf_field_type_enum_iter *bt_ctf_field_type_enum_iter_create(void);
+void bt_ctf_field_type_enum_iter_reset(struct bt_ctf_field_type_enum_iter *iter);
+
+int bt_ctf_field_type_enum_iter_get_index(struct bt_ctf_field_type_enum_iter *iter);
+
 /**
 @defgroup ctfirenumfieldtype CTF IR enumeration field type
 @ingroup ctfirfieldtypes
@@ -1198,8 +1207,8 @@ bt_ctf_field_type_enumeration_add_mapping() or
 bt_ctf_field_type_enumeration_add_mapping_unsigned(), depending on the
 signedness of the wrapped @intft.
 
-Many mappings can share the same name, but the ranges of a given
-enumeration field type <strong>must not overlap</strong>. For example,
+Many mappings can share the same name, and the ranges of a given
+enumeration field type are allowed to overlap. For example,
 this is a valid set of mappings:
 
 @verbatim
@@ -1209,7 +1218,7 @@ CHERRY -> [ 25, 34]
 APPLE  -> [ 55, 55]
 @endverbatim
 
-The following set of mappings is \em not valid, however:
+The following set of mappings is also valid:
 
 @verbatim
 APPLE  -> [  3, 19]
@@ -1369,8 +1378,10 @@ extern int bt_ctf_field_type_enumeration_get_mapping_unsigned(
  * TODO: Document once we know what to do with this function (return
  *       the first match?).
  */
-extern int bt_ctf_field_type_enumeration_get_mapping_index_by_name(
-		struct bt_ctf_field_type *enum_field_type, const char *name);
+extern int bt_ctf_field_type_enumeration_iter_mapping_by_name(
+		struct bt_ctf_field_type *enum_field_type,
+		struct bt_ctf_field_type_enum_iter *iter,
+		const char *name);
 /** @endcond */
 
 /**
@@ -1400,8 +1411,10 @@ bt_ctf_field_type_enumeration_get_container_type(), must be
 	Finds the index of an unsigned mapping of a given enumeration
 	field type by value.
 */
-extern int bt_ctf_field_type_enumeration_get_mapping_index_by_value(
-		struct bt_ctf_field_type *enum_field_type, int64_t value);
+extern int bt_ctf_field_type_enumeration_iter_mapping_by_value(
+		struct bt_ctf_field_type *enum_field_type,
+		struct bt_ctf_field_type_enum_iter *iter,
+		int64_t value);
 
 /**
 @brief  Returns the index of the unsigned mapping of the @enumft
@@ -1430,8 +1443,10 @@ bt_ctf_field_type_enumeration_get_container_type(), must be
 	Finds the index of a signed mapping of a given enumeration
 	field type by value.
 */
-extern int bt_ctf_field_type_enumeration_get_mapping_index_by_unsigned_value(
-		struct bt_ctf_field_type *enum_field_type, uint64_t value);
+extern int bt_ctf_field_type_enumeration_iter_mapping_by_unsigned_value(
+		struct bt_ctf_field_type *enum_field_type,
+		struct bt_ctf_field_type_enum_iter *iter,
+		uint64_t value);
 
 /**
 @brief  Adds a mapping to the @enumft \p enum_field_type which maps the
@@ -1445,9 +1460,7 @@ The @intft wrapped by \p enum_field_type, as returned by
 bt_ctf_field_type_enumeration_get_container_type(), must be
 \b signed to use this function.
 
-A mapping in \p enum_field_type can exist with the name \p name, but
-there must be no overlap amongst all the ranges of
-\p enum_field_type.
+A mapping in \p enum_field_type can exist with the name \p name.
 
 @param[in] enum_field_type	Enumeration field type to which to add
 				a mapping.
@@ -1485,9 +1498,7 @@ The @intft wrapped by \p enum_field_type, as returned by
 bt_ctf_field_type_enumeration_get_container_type(), must be
 \b unsigned to use this function.
 
-A mapping in \p enum_field_type can exist with the name \p name, but
-there must be no overlap amongst all the ranges of
-\p enum_field_type.
+A mapping in \p enum_field_type can exist with the name \p name.
 
 @param[in] enum_field_type	Enumeration field type to which to add
 				a mapping.

@@ -627,18 +627,34 @@ enum bt_component_status print_enum(struct text_component *text,
 {
 	enum bt_component_status ret = BT_COMPONENT_STATUS_OK;
 	struct bt_ctf_field *container_field = NULL;
-	const char *mapping_name;
+	struct bt_ctf_field_type_enum_iter *iter = NULL;
+	int nr_mappings = 0;
 
 	container_field = bt_ctf_field_enumeration_get_container(field);
 	if (!container_field) {
 		ret = BT_COMPONENT_STATUS_ERROR;
 		goto end;
 	}
-	mapping_name = bt_ctf_field_enumeration_get_mapping_name(field);
-	if (mapping_name) {
-		fprintf(text->out, "( \"%s\"", mapping_name);
-	} else {
-		fprintf(text->out, "( <unknown>");
+	iter = bt_ctf_field_type_enum_iter_create();
+	if (!iter) {
+		ret = BT_COMPONENT_STATUS_ERROR;
+		goto end;
+	}
+	fprintf(text->out, "( ");
+	for (;;) {
+		const char *mapping_name;
+
+		mapping_name =
+			bt_ctf_field_enumeration_iter_mapping_name(field, iter);
+		if (!mapping_name) {
+			break;
+		}
+		if (nr_mappings++)
+			fprintf(text->out, ", ");
+		fprintf(text->out, "\"%s\"", mapping_name);
+	}
+	if (!nr_mappings) {
+		fprintf(text->out, "<unknown>");
 	}
 	fprintf(text->out, " : container = ");
 	ret = print_integer(text, container_field);
@@ -647,6 +663,7 @@ enum bt_component_status print_enum(struct text_component *text,
 	}
 	fprintf(text->out, " )");
 end:
+	bt_put(iter);
 	bt_put(container_field);
 	return ret;
 }
@@ -951,6 +968,7 @@ enum bt_component_status print_variant(struct text_component *text,
 	text->depth++;
 	if (print_names) {
 		struct bt_ctf_field *tag_field = NULL;
+		struct bt_ctf_field_type_enum_iter *iter = NULL;
 		const char *tag_choice;
 
 		tag_field = bt_ctf_field_variant_get_tag(variant);
@@ -958,12 +976,19 @@ enum bt_component_status print_variant(struct text_component *text,
 			ret = BT_COMPONENT_STATUS_ERROR;
 			goto end;
 		}
-		tag_choice = bt_ctf_field_enumeration_get_mapping_name(tag_field);
+		iter = bt_ctf_field_type_enum_iter_create();
+		if (!iter) {
+			ret = BT_COMPONENT_STATUS_ERROR;
+			goto end;
+		}
+		tag_choice = bt_ctf_field_enumeration_iter_mapping_name(tag_field, iter);
 		if (!tag_choice) {
+			bt_put(iter);
 			bt_put(tag_field);
 			ret = BT_COMPONENT_STATUS_ERROR;
 			goto end;
 		}
+		bt_put(iter);
 		fprintf(text->out, "%s = ", rem_(tag_choice));
 		bt_put(tag_field);
 	}
