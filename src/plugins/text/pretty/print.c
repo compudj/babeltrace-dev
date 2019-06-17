@@ -59,10 +59,10 @@ static
 void print_name_equal(struct pretty_component *pretty, const char *name)
 {
 	if (pretty->use_colors) {
-		g_string_append_printf(pretty->string, "%s%s%s = ", COLOR_NAME,
+		bt_common_g_string_append_printf(pretty->string, "%s%s%s = ", COLOR_NAME,
 			name, COLOR_RST);
 	} else {
-		g_string_append_printf(pretty->string, "%s = ", name);
+		bt_common_g_string_append_printf(pretty->string, "%s = ", name);
 	}
 }
 
@@ -70,10 +70,10 @@ static
 void print_field_name_equal(struct pretty_component *pretty, const char *name)
 {
 	if (pretty->use_colors) {
-		g_string_append_printf(pretty->string, "%s%s%s = ",
+		bt_common_g_string_append_printf(pretty->string, "%s%s%s = ",
 			COLOR_FIELD_NAME, name, COLOR_RST);
 	} else {
-		g_string_append_printf(pretty->string, "%s = ", name);
+		bt_common_g_string_append_printf(pretty->string, "%s = ", name);
 	}
 }
 
@@ -84,7 +84,7 @@ void print_timestamp_cycles(struct pretty_component *pretty,
 	uint64_t cycles;
 
 	cycles = bt_clock_snapshot_get_value(clock_snapshot);
-	g_string_append_printf(pretty->string, "%020" PRIu64, cycles);
+	bt_common_g_string_append_printf(pretty->string, "%020" PRIu64, cycles);
 
 	if (update_last) {
 		if (pretty->last_cycles_timestamp != -1ULL) {
@@ -201,13 +201,13 @@ void print_timestamp_wall(struct pretty_component *pretty,
 		}
 
 		/* Print time in HH:MM:SS.ns */
-		g_string_append_printf(pretty->string,
+		bt_common_g_string_append_printf(pretty->string,
 			"%02d:%02d:%02d.%09" PRIu64, tm.tm_hour, tm.tm_min,
 			tm.tm_sec, ts_nsec_abs);
 		goto end;
 	}
 seconds:
-	g_string_append_printf(pretty->string, "%s%" PRId64 ".%09" PRIu64,
+	bt_common_g_string_append_printf(pretty->string, "%s%" PRId64 ".%09" PRIu64,
 		is_negative ? "-" : "", ts_sec_abs, ts_nsec_abs);
 end:
 	return;
@@ -261,7 +261,7 @@ int print_event_timestamp(struct pretty_component *pretty,
 				g_string_append(pretty->string,
 					"+??????????\?\?"); /* Not a trigraph. */
 			} else {
-				g_string_append_printf(pretty->string,
+				bt_common_g_string_append_printf(pretty->string,
 					"+%012" PRIu64, pretty->delta_cycles);
 			}
 		} else {
@@ -271,7 +271,7 @@ int print_event_timestamp(struct pretty_component *pretty,
 				delta = pretty->delta_real_timestamp;
 				delta_sec = delta / NSEC_PER_SEC;
 				delta_nsec = delta % NSEC_PER_SEC;
-				g_string_append_printf(pretty->string,
+				bt_common_g_string_append_printf(pretty->string,
 					"+%" PRIu64 ".%09" PRIu64,
 					delta_sec, delta_nsec);
 			} else {
@@ -408,7 +408,7 @@ int print_event_header(struct pretty_component *pretty,
 				g_string_append(pretty->string, ":");
 			}
 			value = bt_value_signed_integer_get(vpid_value);
-			g_string_append_printf(pretty->string,
+			bt_common_g_string_append_printf(pretty->string,
 				"(%" PRId64 ")", value);
 			dom_print = 1;
 		}
@@ -450,7 +450,7 @@ int print_event_header(struct pretty_component *pretty,
 			}
 
 			g_string_append(pretty->string, log_level_str);
-			g_string_append_printf(
+			bt_common_g_string_append_printf(
 				pretty->string, " (%d)", (int) log_level);
 			dom_print = 1;
 		}
@@ -548,7 +548,7 @@ int print_integer(struct pretty_component *pretty,
 		g_string_append(pretty->string, "0b");
 		_bt_safe_lshift(v.u, 64 - len);
 		for (bitnr = 0; bitnr < len; bitnr++) {
-			g_string_append_printf(pretty->string, "%u", (v.u & (1ULL << 63)) ? 1 : 0);
+			bt_common_g_string_append_printf(pretty->string, "%u", (v.u & (1ULL << 63)) ? 1 : 0);
 			_bt_safe_lshift(v.u, 1);
 		}
 		break;
@@ -571,15 +571,15 @@ int print_integer(struct pretty_component *pretty,
 			}
 		}
 
-		g_string_append_printf(pretty->string, "0%" PRIo64, v.u);
+		bt_common_g_string_append_printf(pretty->string, "0%" PRIo64, v.u);
 		break;
 	}
 	case BT_FIELD_CLASS_INTEGER_PREFERRED_DISPLAY_BASE_DECIMAL:
 		if (ft_type == BT_FIELD_CLASS_TYPE_UNSIGNED_INTEGER ||
 				ft_type == BT_FIELD_CLASS_TYPE_UNSIGNED_ENUMERATION) {
-			g_string_append_printf(pretty->string, "%" PRIu64, v.u);
+			bt_common_g_string_append_printf(pretty->string, "%" PRIu64, v.u);
 		} else {
-			g_string_append_printf(pretty->string, "%" PRId64, v.s);
+			bt_common_g_string_append_printf(pretty->string, "%" PRId64, v.s);
 		}
 		break;
 	case BT_FIELD_CLASS_INTEGER_PREFERRED_DISPLAY_BASE_HEXADECIMAL:
@@ -594,7 +594,7 @@ int print_integer(struct pretty_component *pretty,
 			v.u &= ((uint64_t) 1 << rounded_len) - 1;
 		}
 
-		g_string_append_printf(pretty->string, "0x%" PRIX64, v.u);
+		bt_common_g_string_append_printf(pretty->string, "0x%" PRIX64, v.u);
 		break;
 	}
 	default:
@@ -668,7 +668,7 @@ void print_escape_string(struct pretty_component *pretty, const char *str)
 			break;
 		default:
 			/* Unhandled control-sequence, print as hex. */
-			g_string_append_printf(pretty->string, "\\x%02x", str[i]);
+			bt_common_g_string_append_printf(pretty->string, "\\x%02x", str[i]);
 			break;
 		}
 	}
@@ -855,7 +855,7 @@ int print_array_field(struct pretty_component *pretty,
 		g_string_append(pretty->string, " ");
 	}
 	if (print_names) {
-		g_string_append_printf(pretty->string, "[%" PRIu64 "] = ", i);
+		bt_common_g_string_append_printf(pretty->string, "[%" PRIu64 "] = ", i);
 	}
 
 	field = bt_field_array_borrow_element_field_by_index_const(array, i);
@@ -905,7 +905,7 @@ int print_sequence_field(struct pretty_component *pretty,
 		g_string_append(pretty->string, " ");
 	}
 	if (print_names) {
-		g_string_append_printf(pretty->string, "[%" PRIu64 "] = ", i);
+		bt_common_g_string_append_printf(pretty->string, "[%" PRIu64 "] = ", i);
 	}
 
 	field = bt_field_array_borrow_element_field_by_index_const(seq, i);
@@ -984,7 +984,7 @@ int print_field(struct pretty_component *pretty,
 		if (pretty->use_colors) {
 			g_string_append(pretty->string, COLOR_NUMBER_VALUE);
 		}
-		g_string_append_printf(pretty->string, "%g", v);
+		bt_common_g_string_append_printf(pretty->string, "%g", v);
 		if (pretty->use_colors) {
 			g_string_append(pretty->string, COLOR_RST);
 		}
@@ -1249,7 +1249,7 @@ int print_discarded_elements_msg(struct pretty_component *pretty,
 		init_msg = "Tracer discarded";
 	}
 
-	g_string_append_printf(pretty->string,
+	bt_common_g_string_append_printf(pretty->string,
 		"%s%sWARNING%s%s: %s ",
 		bt_common_color_fg_yellow(),
 		bt_common_color_bold(),
@@ -1257,9 +1257,9 @@ int print_discarded_elements_msg(struct pretty_component *pretty,
 		bt_common_color_fg_yellow(), init_msg);
 
 	if (count == UINT64_C(-1)) {
-		g_string_append_printf(pretty->string, "%ss", elem_type);
+		bt_common_g_string_append_printf(pretty->string, "%ss", elem_type);
 	} else {
-		g_string_append_printf(pretty->string,
+		bt_common_g_string_append_printf(pretty->string,
 			"%" PRIu64 " %s%s", count, elem_type,
 			count == 1 ? "" : "s");
 	}
@@ -1276,10 +1276,10 @@ int print_discarded_elements_msg(struct pretty_component *pretty,
 		g_string_append(pretty->string, "(unknown time range)");
 	}
 
-	g_string_append_printf(pretty->string, " in trace \"%s\" ", trace_name);
+	bt_common_g_string_append_printf(pretty->string, " in trace \"%s\" ", trace_name);
 
 	if (trace_uuid) {
-		g_string_append_printf(pretty->string,
+		bt_common_g_string_append_printf(pretty->string,
 			"(UUID: %02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x) ",
 			trace_uuid[0],
 			trace_uuid[1],
@@ -1301,18 +1301,18 @@ int print_discarded_elements_msg(struct pretty_component *pretty,
 		g_string_append(pretty->string, "(no UUID) ");
 	}
 
-	g_string_append_printf(pretty->string,
+	bt_common_g_string_append_printf(pretty->string,
 		"within stream \"%s\" (stream class ID: %" PRIu64 ", ",
 		stream_name, stream_class_id);
 
 	if (stream_id >= 0) {
-		g_string_append_printf(pretty->string,
+		bt_common_g_string_append_printf(pretty->string,
 			"stream ID: %" PRIu64, stream_id);
 	} else {
 		g_string_append(pretty->string, "no stream ID");
 	}
 
-	g_string_append_printf(pretty->string, ").%s\n",
+	bt_common_g_string_append_printf(pretty->string, ").%s\n",
 		bt_common_color_reset());
 
 	/*
