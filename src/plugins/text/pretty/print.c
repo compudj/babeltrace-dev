@@ -58,26 +58,26 @@ static
 void print_name_equal(struct pretty_component *pretty, const char *name)
 {
 	if (pretty->use_colors) {
-		g_string_append(pretty->string, COLOR_NAME);
-		g_string_append(pretty->string, name);
-		g_string_append(pretty->string, COLOR_RST);
+		bt_common_g_string_append(pretty->string, COLOR_NAME);
+		bt_common_g_string_append(pretty->string, name);
+		bt_common_g_string_append(pretty->string, COLOR_RST);
 	} else {
-		g_string_append(pretty->string, name);
+		bt_common_g_string_append(pretty->string, name);
 	}
-	g_string_append(pretty->string, " = ");
+	bt_common_g_string_append(pretty->string, " = ");
 }
 
 static
 void print_field_name_equal(struct pretty_component *pretty, const char *name)
 {
 	if (pretty->use_colors) {
-		g_string_append(pretty->string, COLOR_FIELD_NAME);
-		g_string_append(pretty->string, name);
-		g_string_append(pretty->string, COLOR_RST);
+		bt_common_g_string_append(pretty->string, COLOR_FIELD_NAME);
+		bt_common_g_string_append(pretty->string, name);
+		bt_common_g_string_append(pretty->string, COLOR_RST);
 	} else {
-		g_string_append(pretty->string, name);
-}
-	g_string_append(pretty->string, " = ");
+		bt_common_g_string_append(pretty->string, name);
+	}
+	bt_common_g_string_append(pretty->string, " = ");
 }
 
 static
@@ -109,14 +109,14 @@ void print_timestamp_wall(struct pretty_component *pretty,
 	bool is_negative;
 
 	if (!clock_snapshot) {
-		g_string_append(pretty->string, "??:??:??.?????????");
+		bt_common_g_string_append(pretty->string, "??:??:??.?????????");
 		return;
 	}
 
 	ret = bt_clock_snapshot_get_ns_from_origin(clock_snapshot, &ts_nsec);
 	if (ret) {
 		// TODO: log, this is unexpected
-		g_string_append(pretty->string, "Error");
+		bt_common_g_string_append(pretty->string, "Error");
 		return;
 	}
 
@@ -200,7 +200,7 @@ void print_timestamp_wall(struct pretty_component *pretty,
 				goto seconds;
 			}
 
-			g_string_append(pretty->string, timestr);
+			bt_common_g_string_append(pretty->string, timestr);
 		}
 
 		/* Print time in HH:MM:SS.ns */
@@ -235,10 +235,10 @@ int print_event_timestamp(struct pretty_component *pretty,
 	if (print_names) {
 		print_name_equal(pretty, "timestamp");
 	} else {
-		g_string_append(pretty->string, "[");
+		bt_common_g_string_append(pretty->string, "[");
 	}
 	if (pretty->use_colors) {
-		g_string_append(pretty->string, COLOR_TIMESTAMP);
+		bt_common_g_string_append(pretty->string, COLOR_TIMESTAMP);
 	}
 	if (pretty->options.print_timestamp_cycles) {
 		print_timestamp_cycles(pretty, clock_snapshot, true);
@@ -246,22 +246,22 @@ int print_event_timestamp(struct pretty_component *pretty,
 		print_timestamp_wall(pretty, clock_snapshot, true);
 	}
 	if (pretty->use_colors) {
-		g_string_append(pretty->string, COLOR_RST);
+		bt_common_g_string_append(pretty->string, COLOR_RST);
 	}
 
 	if (!print_names)
-		g_string_append(pretty->string, "] ");
+		bt_common_g_string_append(pretty->string, "] ");
 
 	if (pretty->options.print_delta_field) {
 		if (print_names) {
-			g_string_append(pretty->string, ", ");
+			bt_common_g_string_append(pretty->string, ", ");
 			print_name_equal(pretty, "delta");
 		} else {
-			g_string_append(pretty->string, "(");
+			bt_common_g_string_append(pretty->string, "(");
 		}
 		if (pretty->options.print_timestamp_cycles) {
 			if (pretty->delta_cycles == -1ULL) {
-				g_string_append(pretty->string,
+				bt_common_g_string_append(pretty->string,
 					"+??????????\?\?"); /* Not a trigraph. */
 			} else {
 				bt_common_g_string_append_printf(pretty->string,
@@ -278,11 +278,11 @@ int print_event_timestamp(struct pretty_component *pretty,
 					"+%" PRIu64 ".%09" PRIu64,
 					delta_sec, delta_nsec);
 			} else {
-				g_string_append(pretty->string, "+?.?????????");
+				bt_common_g_string_append(pretty->string, "+?.?????????");
 			}
 		}
 		if (!print_names) {
-			g_string_append(pretty->string, ") ");
+			bt_common_g_string_append(pretty->string, ") ");
 		}
 	}
 	*start_line = !print_names;
@@ -320,16 +320,16 @@ int print_event_header(struct pretty_component *pretty,
 		name = bt_trace_get_name(trace);
 		if (name) {
 			if (!pretty->start_line) {
-				g_string_append(pretty->string, ", ");
+				bt_common_g_string_append(pretty->string, ", ");
 			}
 			if (print_names) {
 				print_name_equal(pretty, "trace");
 			}
 
-			g_string_append(pretty->string, name);
+			bt_common_g_string_append(pretty->string, name);
 
 			if (print_names) {
-				g_string_append(pretty->string, ", ");
+				bt_common_g_string_append(pretty->string, ", ");
 			}
 		}
 	}
@@ -342,13 +342,13 @@ int print_event_header(struct pretty_component *pretty,
 			const char *str;
 
 			if (!pretty->start_line) {
-				g_string_append(pretty->string, ", ");
+				bt_common_g_string_append(pretty->string, ", ");
 			}
 			if (print_names) {
 				print_name_equal(pretty, "trace:hostname");
 			}
 			str = bt_value_string_get(hostname_str);
-			g_string_append(pretty->string, str);
+			bt_common_g_string_append(pretty->string, str);
 			dom_print = 1;
 		}
 	}
@@ -361,15 +361,15 @@ int print_event_header(struct pretty_component *pretty,
 			const char *str;
 
 			if (!pretty->start_line) {
-				g_string_append(pretty->string, ", ");
+				bt_common_g_string_append(pretty->string, ", ");
 			}
 			if (print_names) {
 				print_name_equal(pretty, "trace:domain");
 			} else if (dom_print) {
-				g_string_append(pretty->string, ":");
+				bt_common_g_string_append(pretty->string, ":");
 			}
 			str = bt_value_string_get(domain_str);
-			g_string_append(pretty->string, str);
+			bt_common_g_string_append(pretty->string, str);
 			dom_print = 1;
 		}
 	}
@@ -382,15 +382,15 @@ int print_event_header(struct pretty_component *pretty,
 			const char *str;
 
 			if (!pretty->start_line) {
-				g_string_append(pretty->string, ", ");
+				bt_common_g_string_append(pretty->string, ", ");
 			}
 			if (print_names) {
 				print_name_equal(pretty, "trace:procname");
 			} else if (dom_print) {
-				g_string_append(pretty->string, ":");
+				bt_common_g_string_append(pretty->string, ":");
 			}
 			str = bt_value_string_get(procname_str);
-			g_string_append(pretty->string, str);
+			bt_common_g_string_append(pretty->string, str);
 			dom_print = 1;
 		}
 	}
@@ -403,12 +403,12 @@ int print_event_header(struct pretty_component *pretty,
 			int64_t value;
 
 			if (!pretty->start_line) {
-				g_string_append(pretty->string, ", ");
+				bt_common_g_string_append(pretty->string, ", ");
 			}
 			if (print_names) {
 				print_name_equal(pretty, "trace:vpid");
 			} else if (dom_print) {
-				g_string_append(pretty->string, ":");
+				bt_common_g_string_append(pretty->string, ":");
 			}
 			value = bt_value_signed_integer_get(vpid_value);
 			bt_common_g_string_append_printf(pretty->string,
@@ -444,15 +444,15 @@ int print_event_header(struct pretty_component *pretty,
 			BT_ASSERT(log_level_str);
 
 			if (!pretty->start_line) {
-				g_string_append(pretty->string, ", ");
+				bt_common_g_string_append(pretty->string, ", ");
 			}
 			if (print_names) {
 				print_name_equal(pretty, "loglevel");
 			} else if (dom_print) {
-				g_string_append(pretty->string, ":");
+				bt_common_g_string_append(pretty->string, ":");
 			}
 
-			g_string_append(pretty->string, log_level_str);
+			bt_common_g_string_append(pretty->string, log_level_str);
 			bt_common_g_string_append_printf(
 				pretty->string, " (%d)", (int) log_level);
 			dom_print = 1;
@@ -464,23 +464,23 @@ int print_event_header(struct pretty_component *pretty,
 		uri_str = bt_event_class_get_emf_uri(event_class);
 		if (uri_str) {
 			if (!pretty->start_line) {
-				g_string_append(pretty->string, ", ");
+				bt_common_g_string_append(pretty->string, ", ");
 			}
 			if (print_names) {
 				print_name_equal(pretty, "model.emf.uri");
 			} else if (dom_print) {
-				g_string_append(pretty->string, ":");
+				bt_common_g_string_append(pretty->string, ":");
 			}
 
-			g_string_append(pretty->string, uri_str);
+			bt_common_g_string_append(pretty->string, uri_str);
 			dom_print = 1;
 		}
 	}
 	if (dom_print && !print_names) {
-		g_string_append(pretty->string, " ");
+		bt_common_g_string_append(pretty->string, " ");
 	}
 	if (!pretty->start_line) {
-		g_string_append(pretty->string, ", ");
+		bt_common_g_string_append(pretty->string, ", ");
 	}
 	pretty->start_line = true;
 	if (print_names) {
@@ -489,23 +489,25 @@ int print_event_header(struct pretty_component *pretty,
 	ev_name = bt_event_class_get_name(event_class);
 	if (pretty->use_colors) {
 		if (ev_name) {
-			g_string_append(pretty->string, COLOR_EVENT_NAME);
+			bt_common_g_string_append(pretty->string,
+				COLOR_EVENT_NAME);
 		} else {
-			g_string_append(pretty->string, COLOR_UNKNOWN);
+			bt_common_g_string_append(pretty->string,
+				COLOR_UNKNOWN);
 		}
 	}
 	if (ev_name) {
-		g_string_append(pretty->string, ev_name);
+		bt_common_g_string_append(pretty->string, ev_name);
 	} else {
-		g_string_append(pretty->string, "<unknown>");
+		bt_common_g_string_append(pretty->string, "<unknown>");
 	}
 	if (pretty->use_colors) {
-		g_string_append(pretty->string, COLOR_RST);
+		bt_common_g_string_append(pretty->string, COLOR_RST);
 	}
 	if (!print_names) {
-		g_string_append(pretty->string, ": ");
+		bt_common_g_string_append(pretty->string, ": ");
 	} else {
-		g_string_append(pretty->string, ", ");
+		bt_common_g_string_append(pretty->string, ", ");
 	}
 
 end:
@@ -537,7 +539,7 @@ int print_integer(struct pretty_component *pretty,
 	}
 
 	if (pretty->use_colors) {
-		g_string_append(pretty->string, COLOR_NUMBER_VALUE);
+		bt_common_g_string_append(pretty->string, COLOR_NUMBER_VALUE);
 		rst_color = true;
 	}
 
@@ -548,7 +550,7 @@ int print_integer(struct pretty_component *pretty,
 		int bitnr, len;
 
 		len = bt_field_class_integer_get_field_value_range(int_fc);
-		g_string_append(pretty->string, "0b");
+		bt_common_g_string_append(pretty->string, "0b");
 		_bt_safe_lshift(v.u, 64 - len);
 		for (bitnr = 0; bitnr < len; bitnr++) {
 			bt_common_g_string_append_printf(pretty->string, "%u", (v.u & (1ULL << 63)) ? 1 : 0);
@@ -606,7 +608,7 @@ int print_integer(struct pretty_component *pretty,
 	}
 end:
 	if (rst_color) {
-		g_string_append(pretty->string, COLOR_RST);
+		bt_common_g_string_append(pretty->string, COLOR_RST);
 	}
 	return ret;
 }
@@ -616,58 +618,58 @@ void print_escape_string(struct pretty_component *pretty, const char *str)
 {
 	int i;
 
-	g_string_append_c(pretty->string, '"');
+	bt_common_g_string_append_c(pretty->string, '"');
 
 	for (i = 0; i < strlen(str); i++) {
 		/* Escape sequences not recognized by iscntrl(). */
 		switch (str[i]) {
 		case '\\':
-			g_string_append(pretty->string, "\\\\");
+			bt_common_g_string_append(pretty->string, "\\\\");
 			continue;
 		case '\'':
-			g_string_append(pretty->string, "\\\'");
+			bt_common_g_string_append(pretty->string, "\\\'");
 			continue;
 		case '\"':
-			g_string_append(pretty->string, "\\\"");
+			bt_common_g_string_append(pretty->string, "\\\"");
 			continue;
 		case '\?':
-			g_string_append(pretty->string, "\\\?");
+			bt_common_g_string_append(pretty->string, "\\\?");
 			continue;
 		}
 
 		/* Standard characters. */
 		if (!iscntrl(str[i])) {
-			g_string_append_c(pretty->string, str[i]);
+			bt_common_g_string_append_c(pretty->string, str[i]);
 			continue;
 		}
 
 		switch (str[i]) {
 		case '\0':
-			g_string_append(pretty->string, "\\0");
+			bt_common_g_string_append(pretty->string, "\\0");
 			break;
 		case '\a':
-			g_string_append(pretty->string, "\\a");
+			bt_common_g_string_append(pretty->string, "\\a");
 			break;
 		case '\b':
-			g_string_append(pretty->string, "\\b");
+			bt_common_g_string_append(pretty->string, "\\b");
 			break;
 		case '\e':
-			g_string_append(pretty->string, "\\e");
+			bt_common_g_string_append(pretty->string, "\\e");
 			break;
 		case '\f':
-			g_string_append(pretty->string, "\\f");
+			bt_common_g_string_append(pretty->string, "\\f");
 			break;
 		case '\n':
-			g_string_append(pretty->string, "\\n");
+			bt_common_g_string_append(pretty->string, "\\n");
 			break;
 		case '\r':
-			g_string_append(pretty->string, "\\r");
+			bt_common_g_string_append(pretty->string, "\\r");
 			break;
 		case '\t':
-			g_string_append(pretty->string, "\\t");
+			bt_common_g_string_append(pretty->string, "\\t");
 			break;
 		case '\v':
-			g_string_append(pretty->string, "\\v");
+			bt_common_g_string_append(pretty->string, "\\v");
 			break;
 		default:
 			/* Unhandled control-sequence, print as hex. */
@@ -676,7 +678,7 @@ void print_escape_string(struct pretty_component *pretty, const char *str)
 		}
 	}
 
-	g_string_append_c(pretty->string, '"');
+	bt_common_g_string_append_c(pretty->string, '"');
 }
 
 static
@@ -713,14 +715,14 @@ int print_enum(struct pretty_component *pretty,
 		goto end;
 	}
 
-	g_string_append(pretty->string, "( ");
+	bt_common_g_string_append(pretty->string, "( ");
 	if (label_count == 0) {
 		if (pretty->use_colors) {
-			g_string_append(pretty->string, COLOR_UNKNOWN);
+			bt_common_g_string_append(pretty->string, COLOR_UNKNOWN);
 		}
-		g_string_append(pretty->string, "<unknown>");
+		bt_common_g_string_append(pretty->string, "<unknown>");
 		if (pretty->use_colors) {
-			g_string_append(pretty->string, COLOR_RST);
+			bt_common_g_string_append(pretty->string, COLOR_RST);
 		}
 		goto skip_loop;
 	}
@@ -728,23 +730,23 @@ int print_enum(struct pretty_component *pretty,
 		const char *mapping_name = label_array[i];
 
 		if (i != 0) {
-			g_string_append(pretty->string, ", ");
+			bt_common_g_string_append(pretty->string, ", ");
 		}
 		if (pretty->use_colors) {
-			g_string_append(pretty->string, COLOR_ENUM_MAPPING_NAME);
+			bt_common_g_string_append(pretty->string, COLOR_ENUM_MAPPING_NAME);
 		}
 		print_escape_string(pretty, mapping_name);
 		if (pretty->use_colors) {
-			g_string_append(pretty->string, COLOR_RST);
+			bt_common_g_string_append(pretty->string, COLOR_RST);
 		}
 	}
 skip_loop:
-	g_string_append(pretty->string, " : container = ");
+	bt_common_g_string_append(pretty->string, " : container = ");
 	ret = print_integer(pretty, field);
 	if (ret != 0) {
 		goto end;
 	}
-	g_string_append(pretty->string, " )");
+	bt_common_g_string_append(pretty->string, " )");
 end:
 	return ret;
 }
@@ -771,9 +773,9 @@ int print_struct_field(struct pretty_component *pretty,
 	field_name = bt_field_class_structure_member_get_name(member);
 
 	if (*nr_printed_fields > 0) {
-		g_string_append(pretty->string, ", ");
+		bt_common_g_string_append(pretty->string, ", ");
 	} else {
-		g_string_append(pretty->string, " ");
+		bt_common_g_string_append(pretty->string, " ");
 	}
 	if (print_names) {
 		print_field_name_equal(pretty, field_name);
@@ -801,7 +803,7 @@ int print_struct(struct pretty_component *pretty,
 
 	nr_fields = bt_field_class_structure_get_member_count(struct_class);
 
-	g_string_append(pretty->string, "{");
+	bt_common_g_string_append(pretty->string, "{");
 	pretty->depth++;
 	nr_printed_fields = 0;
 	for (i = 0; i < nr_fields; i++) {
@@ -812,7 +814,7 @@ int print_struct(struct pretty_component *pretty,
 		}
 	}
 	pretty->depth--;
-	g_string_append(pretty->string, " }");
+	bt_common_g_string_append(pretty->string, " }");
 
 end:
 	return ret;
@@ -825,9 +827,9 @@ int print_array_field(struct pretty_component *pretty,
 	const bt_field *field = NULL;
 
 	if (i != 0) {
-		g_string_append(pretty->string, ", ");
+		bt_common_g_string_append(pretty->string, ", ");
 	} else {
-		g_string_append(pretty->string, " ");
+		bt_common_g_string_append(pretty->string, " ");
 	}
 	if (print_names) {
 		bt_common_g_string_append_printf(pretty->string, "[%" PRIu64 "] = ", i);
@@ -853,7 +855,7 @@ int print_array(struct pretty_component *pretty,
 		goto end;
 	}
 	len = bt_field_array_get_length(array);
-	g_string_append(pretty->string, "[");
+	bt_common_g_string_append(pretty->string, "[");
 	pretty->depth++;
 	for (i = 0; i < len; i++) {
 		ret = print_array_field(pretty, array, i, print_names);
@@ -862,7 +864,7 @@ int print_array(struct pretty_component *pretty,
 		}
 	}
 	pretty->depth--;
-	g_string_append(pretty->string, " ]");
+	bt_common_g_string_append(pretty->string, " ]");
 
 end:
 	return ret;
@@ -875,9 +877,9 @@ int print_sequence_field(struct pretty_component *pretty,
 	const bt_field *field = NULL;
 
 	if (i != 0) {
-		g_string_append(pretty->string, ", ");
+		bt_common_g_string_append(pretty->string, ", ");
 	} else {
-		g_string_append(pretty->string, " ");
+		bt_common_g_string_append(pretty->string, " ");
 	}
 	if (print_names) {
 		bt_common_g_string_append_printf(pretty->string, "[%" PRIu64 "] = ", i);
@@ -897,7 +899,7 @@ int print_sequence(struct pretty_component *pretty,
 	uint64_t i;
 
 	len = bt_field_array_get_length(seq);
-	g_string_append(pretty->string, "[");
+	bt_common_g_string_append(pretty->string, "[");
 
 	pretty->depth++;
 	for (i = 0; i < len; i++) {
@@ -907,7 +909,7 @@ int print_sequence(struct pretty_component *pretty,
 		}
 	}
 	pretty->depth--;
-	g_string_append(pretty->string, " ]");
+	bt_common_g_string_append(pretty->string, " ]");
 
 end:
 	return ret;
@@ -922,7 +924,7 @@ int print_variant(struct pretty_component *pretty,
 
 	field = bt_field_variant_borrow_selected_option_field_const(variant);
 	BT_ASSERT(field);
-	g_string_append(pretty->string, "{ ");
+	bt_common_g_string_append(pretty->string, "{ ");
 	pretty->depth++;
 	if (print_names) {
 		// TODO: find tag's name using field path
@@ -933,7 +935,7 @@ int print_variant(struct pretty_component *pretty,
 		goto end;
 	}
 	pretty->depth--;
-	g_string_append(pretty->string, " }");
+	bt_common_g_string_append(pretty->string, " }");
 
 end:
 	return ret;
@@ -956,11 +958,11 @@ int print_field(struct pretty_component *pretty,
 
 		v = bt_field_real_get_value(field);
 		if (pretty->use_colors) {
-			g_string_append(pretty->string, COLOR_NUMBER_VALUE);
+			bt_common_g_string_append(pretty->string, COLOR_NUMBER_VALUE);
 		}
 		bt_common_g_string_append_printf(pretty->string, "%g", v);
 		if (pretty->use_colors) {
-			g_string_append(pretty->string, COLOR_RST);
+			bt_common_g_string_append(pretty->string, COLOR_RST);
 		}
 		return 0;
 	}
@@ -977,11 +979,11 @@ int print_field(struct pretty_component *pretty,
 		}
 
 		if (pretty->use_colors) {
-			g_string_append(pretty->string, COLOR_STRING_VALUE);
+			bt_common_g_string_append(pretty->string, COLOR_STRING_VALUE);
 		}
 		print_escape_string(pretty, str);
 		if (pretty->use_colors) {
-			g_string_append(pretty->string, COLOR_RST);
+			bt_common_g_string_append(pretty->string, COLOR_RST);
 		}
 		return 0;
 	}
@@ -1018,7 +1020,7 @@ int print_stream_packet_context(struct pretty_component *pretty,
 		goto end;
 	}
 	if (!pretty->start_line) {
-		g_string_append(pretty->string, ", ");
+		bt_common_g_string_append(pretty->string, ", ");
 	}
 	pretty->start_line = false;
 	if (pretty->options.print_scope_field_names) {
@@ -1043,7 +1045,7 @@ int print_stream_event_context(struct pretty_component *pretty,
 		goto end;
 	}
 	if (!pretty->start_line) {
-		g_string_append(pretty->string, ", ");
+		bt_common_g_string_append(pretty->string, ", ");
 	}
 	pretty->start_line = false;
 	if (pretty->options.print_scope_field_names) {
@@ -1068,7 +1070,7 @@ int print_event_context(struct pretty_component *pretty,
 		goto end;
 	}
 	if (!pretty->start_line) {
-		g_string_append(pretty->string, ", ");
+		bt_common_g_string_append(pretty->string, ", ");
 	}
 	pretty->start_line = false;
 	if (pretty->options.print_scope_field_names) {
@@ -1093,7 +1095,7 @@ int print_event_payload(struct pretty_component *pretty,
 		goto end;
 	}
 	if (!pretty->start_line) {
-		g_string_append(pretty->string, ", ");
+		bt_common_g_string_append(pretty->string, ", ");
 	}
 	pretty->start_line = false;
 	if (pretty->options.print_scope_field_names) {
@@ -1159,7 +1161,7 @@ int pretty_print_event(struct pretty_component *pretty,
 		goto end;
 	}
 
-	g_string_append_c(pretty->string, '\n');
+	bt_common_g_string_append_c(pretty->string, '\n');
 	if (flush_buf(pretty->out, pretty)) {
 		ret = -1;
 		goto end;
@@ -1235,16 +1237,16 @@ int print_discarded_elements_msg(struct pretty_component *pretty,
 			count == 1 ? "" : "s");
 	}
 
-	g_string_append_c(pretty->string, ' ');
+	bt_common_g_string_append_c(pretty->string, ' ');
 
 	if (begin_clock_snapshot && end_clock_snapshot) {
-		g_string_append(pretty->string, "between [");
+		bt_common_g_string_append(pretty->string, "between [");
 		print_timestamp_wall(pretty, begin_clock_snapshot, false);
-		g_string_append(pretty->string, "] and [");
+		bt_common_g_string_append(pretty->string, "] and [");
 		print_timestamp_wall(pretty, end_clock_snapshot, false);
-		g_string_append(pretty->string, "]");
+		bt_common_g_string_append(pretty->string, "]");
 	} else {
-		g_string_append(pretty->string, "(unknown time range)");
+		bt_common_g_string_append(pretty->string, "(unknown time range)");
 	}
 
 	bt_common_g_string_append_printf(pretty->string, " in trace \"%s\" ", trace_name);
@@ -1269,7 +1271,7 @@ int print_discarded_elements_msg(struct pretty_component *pretty,
 			trace_uuid[14],
 			trace_uuid[15]);
 	} else {
-		g_string_append(pretty->string, "(no UUID) ");
+		bt_common_g_string_append(pretty->string, "(no UUID) ");
 	}
 
 	bt_common_g_string_append_printf(pretty->string,
@@ -1280,7 +1282,7 @@ int print_discarded_elements_msg(struct pretty_component *pretty,
 		bt_common_g_string_append_printf(pretty->string,
 			"stream ID: %" PRIu64, stream_id);
 	} else {
-		g_string_append(pretty->string, "no stream ID");
+		bt_common_g_string_append(pretty->string, "no stream ID");
 	}
 
 	bt_common_g_string_append_printf(pretty->string, ").%s\n",
