@@ -32,6 +32,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 
 #include <babeltrace2/trace-ir/event-class-const.h>
 #include <babeltrace2/trace-ir/field-class-const.h>
@@ -722,5 +723,12 @@ end:
 }
 
 #include <babeltrace2/undef-func-status.h>
+
+/*
+ * bt_g_string_append_printf cannot be inlined because it expects a
+ * variadic argument list.
+ */
+BT_HIDDEN
+int bt_common_g_string_append_printf(GString *str, const char *fmt, ...);
 
 #endif /* BABELTRACE_COMMON_INTERNAL_H */
